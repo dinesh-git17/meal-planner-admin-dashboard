@@ -121,15 +121,20 @@ export default function AdminPage() {
     })
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
-  }
+// Replace the formatDate function in both files with this:
 
+const formatDate = (dateString: string) => {
+  // For date-only strings like "2025-07-04", parse as local date to avoid timezone issues
+  const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+  const date = new Date(year, month - 1, day); // month is 0-indexed
+  
+  return date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
+}
   const mealEmojis = {
     breakfast: '🍳',
     lunch: '🫐', 
