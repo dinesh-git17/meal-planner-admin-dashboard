@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 type MealLog = {
   id: string;
@@ -22,7 +22,7 @@ function renderMeal(meal: any) {
     return <span className="italic text-gray-400">—</span>;
   }
 
-  if (typeof meal === "string") {
+  if (typeof meal === 'string') {
     try {
       meal = JSON.parse(meal);
     } catch {
@@ -66,7 +66,7 @@ export default function AdminPage() {
   const [filteredLogs, setFilteredLogs] = useState<MealLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [contentReady, setContentReady] = useState(false);
-  const [selectedName, setSelectedName] = useState("all");
+  const [selectedName, setSelectedName] = useState('all');
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
@@ -81,14 +81,34 @@ export default function AdminPage() {
 
   useEffect(() => {
     const fetchLogs = () => {
-      const timestamp = new Date().getTime();
+      // Multiple cache-busting parameters
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(7);
       setLastRefresh(new Date());
 
-      fetch(`/api/admin/log-meal?timestamp=${timestamp}`)
-        .then((res) => res.json())
+      fetch(`/api/admin/log-meal?timestamp=${timestamp}&r=${random}`, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      })
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        })
         .then((data) => {
+          console.log(
+            `[ADMIN_LOGS] Fetched ${data.logs?.length || 0} logs at ${new Date().toISOString()}`,
+          );
           const logsData = data.logs || [];
           setLogs(logsData);
+        })
+        .catch((error) => {
+          console.error('Error fetching logs:', error);
         })
         .finally(() => setLoading(false));
     };
@@ -105,7 +125,7 @@ export default function AdminPage() {
 
   // Filter logs based on selected name
   useEffect(() => {
-    if (selectedName === "all") {
+    if (selectedName === 'all') {
       setFilteredLogs(logs);
     } else {
       setFilteredLogs(logs.filter((log) => log.name === selectedName));
@@ -113,7 +133,7 @@ export default function AdminPage() {
   }, [logs, selectedName]);
 
   const uniqueNames = Array.from(
-    new Set(logs.map((log) => log.name).filter(Boolean))
+    new Set(logs.map((log) => log.name).filter(Boolean)),
   );
 
   const handleLogToggle = (logId: string) => {
@@ -121,55 +141,58 @@ export default function AdminPage() {
   };
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      year: "numeric",
+    // Parse as local date to avoid timezone shifts
+    const [year, month, day] = dateString.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
     });
   };
-
   const mealEmojis = {
-    breakfast: "🍳",
-    lunch: "🫐",
-    dinner: "🍜",
+    breakfast: '🍳',
+    lunch: '🫐',
+    dinner: '🍜',
   };
 
   return (
     <motion.main
       initial={{ opacity: 0 }}
       animate={{ opacity: contentReady ? 1 : 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
+      transition={{ duration: 0.6, ease: 'easeOut' }}
       className="
         min-h-[100dvh] w-full overflow-hidden
         relative pt-8 md:pt-12 pb-8
       "
       style={{
-        paddingTop: "max(env(safe-area-inset-top), 2rem)",
-        paddingBottom: "max(env(safe-area-inset-bottom), 2rem)",
+        paddingTop: 'max(env(safe-area-inset-top), 2rem)',
+        paddingBottom: 'max(env(safe-area-inset-bottom), 2rem)',
       }}
     >
       {/* Same Dynamic Animated Gradient Background as Homepage */}
       <div
         className="fixed -z-10"
         style={{
-          top: "calc(-1 * env(safe-area-inset-top, 0px))",
-          left: "calc(-1 * env(safe-area-inset-left, 0px))",
-          right: "calc(-1 * env(safe-area-inset-right, 0px))",
-          bottom: "calc(-1 * env(safe-area-inset-bottom, 0px))",
+          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
+          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
+          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
+          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
           width:
-            "calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))",
+            'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
           height:
-            "calc(100vh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))",
+            'calc(100vh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
           minHeight:
-            "calc(100vh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))",
+            'calc(100vh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
         }}
       >
         {/* Base gradient layer */}
@@ -243,7 +266,7 @@ export default function AdminPage() {
             opacity: contentReady ? 1 : 0,
             y: contentReady ? 0 : 10,
           }}
-          transition={{ delay: 0.1, duration: 0.4, ease: "easeOut" }}
+          transition={{ delay: 0.1, duration: 0.4, ease: 'easeOut' }}
           className="mb-8"
         >
           <div
@@ -281,7 +304,7 @@ export default function AdminPage() {
                   <option value="all">All Users ({logs.length})</option>
                   {uniqueNames.map((name) => {
                     const count = logs.filter(
-                      (log) => log.name === name
+                      (log) => log.name === name,
                     ).length;
                     return (
                       <option key={name} value={name}>
@@ -309,12 +332,12 @@ export default function AdminPage() {
             </div>
 
             {/* Active Filter Display */}
-            {selectedName !== "all" && (
+            {selectedName !== 'all' && (
               <div className="flex flex-wrap gap-2 mt-4 justify-center">
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-pink-100 text-pink-700 text-xs font-medium">
                   👤 {selectedName}
                   <button
-                    onClick={() => setSelectedName("all")}
+                    onClick={() => setSelectedName('all')}
                     className="ml-1 hover:text-pink-900 transition-colors"
                   >
                     ×
@@ -329,7 +352,7 @@ export default function AdminPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: contentReady ? 1 : 0 }}
-          transition={{ delay: 0.2, duration: 0.4, ease: "easeOut" }}
+          transition={{ delay: 0.2, duration: 0.4, ease: 'easeOut' }}
           className="flex-1 overflow-y-auto"
         >
           {loading ? (
@@ -343,7 +366,7 @@ export default function AdminPage() {
                 transition={{
                   duration: 2,
                   repeat: Infinity,
-                  ease: "easeInOut",
+                  ease: 'easeInOut',
                 }}
                 className="flex justify-center space-x-1.5 mb-4"
               >
@@ -363,19 +386,19 @@ export default function AdminPage() {
               "
             >
               <div className="text-4xl mb-4">
-                {logs.length === 0 ? "📭" : "🔍"}
+                {logs.length === 0 ? '📭' : '🔍'}
               </div>
               <h2 className="text-xl font-semibold text-gray-800 mb-2">
-                {logs.length === 0 ? "No logs yet" : "No results found"}
+                {logs.length === 0 ? 'No logs yet' : 'No results found'}
               </h2>
               <p className="text-gray-600 text-center">
                 {logs.length === 0
-                  ? "Meal logs will appear here as users log their meals."
-                  : "Try adjusting your filter to see more results."}
+                  ? 'Meal logs will appear here as users log their meals.'
+                  : 'Try adjusting your filter to see more results.'}
               </p>
               {logs.length > 0 && (
                 <button
-                  onClick={() => setSelectedName("all")}
+                  onClick={() => setSelectedName('all')}
                   className="mt-4 px-4 py-2 rounded-xl bg-gradient-to-r from-pink-400 to-pink-500 text-white text-sm font-medium hover:scale-105 transition-transform"
                 >
                   Clear Filter
@@ -405,11 +428,11 @@ export default function AdminPage() {
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-pink-200 to-yellow-200 rounded-full flex items-center justify-center text-lg font-bold text-white shadow-sm">
-                        {(log.name || "U")[0].toUpperCase()}
+                        {(log.name || 'U')[0].toUpperCase()}
                       </div>
                       <div>
                         <h2 className="text-lg font-bold text-gray-900">
-                          {log.name || "Unknown User"}
+                          {log.name || 'Unknown User'}
                         </h2>
                         <p className="text-sm text-gray-500">
                           {/* ✅ Always use the date field consistently */}
@@ -419,7 +442,7 @@ export default function AdminPage() {
                     </div>
                     <motion.div
                       className={`transform transition-transform duration-200 ${
-                        expandedLogId === log.id ? "rotate-180" : ""
+                        expandedLogId === log.id ? 'rotate-180' : ''
                       }`}
                     >
                       <svg
@@ -442,12 +465,12 @@ export default function AdminPage() {
                   {expandedLogId === log.id && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
+                      animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.3 }}
                       className="space-y-4"
                     >
-                      {(["breakfast", "lunch", "dinner"] as const).map(
+                      {(['breakfast', 'lunch', 'dinner'] as const).map(
                         (mealType) => {
                           const meal = log[mealType];
                           const gptResponse = log[
@@ -493,7 +516,7 @@ export default function AdminPage() {
                               )}
                             </div>
                           );
-                        }
+                        },
                       )}
                     </motion.div>
                   )}
